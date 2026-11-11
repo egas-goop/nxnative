@@ -1,0 +1,31 @@
+name: Build iOS App
+
+on:
+  workflow_dispatch: # Allows you to trigger the build manually with a button
+
+jobs:
+  build:
+    runs-on: macos-latest # This rents a free cloud Mac with Xcode pre-installed
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Xcode Version
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Compile App
+        run: |
+          # Finds the Xcode project or workspace and builds it 
+          xcodebuild archive \
+            -workspace *.xcworkspace 2>/dev/null || xcodebuild archive -project *.xcodeproj \
+            -scheme $(xcodebuild -list | grep -A 1 "Schemes:" | tail -n 1 | xargs) \
+            -configuration Release \
+            -archivePath $PWD/build/App.xcarchive \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Upload Finished App
+        uses: actions/upload-artifact@v4
+        with:
+          name: compiled-ios-app
+          path: build/App.xcarchive
